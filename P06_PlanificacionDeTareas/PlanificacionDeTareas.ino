@@ -21,6 +21,16 @@ int caraActual = 0;
 int caraAnterior = 0;
 bool ContarMPU = false;
 
+//Seno con serie taylor
+const char msgSenoTaylor[] = "Polinomio de Taylor de grado 20 para seno calculado";
+int msgSenoTaylor_leng = strlen(msgSenoTaylor);
+float anguloGrados = 0; // Ángulo en grados
+float anguloRads = 0; // Ángulo en radianes
+float senoResultado = 0;       // Resultado del polinomio
+const int maxTerms = 20; // Grado del polinomio
+bool calcular = false;
+bool calculando = false;
+
 // Configuración de pines
 #define LED1_PIN 2       // LED para Tarea 1
 #define LED2_PIN 4       // LED para Tarea 3
@@ -38,6 +48,7 @@ TaskHandle_t task4Handle;
 TaskHandle_t task5Handle;
 TaskHandle_t task6Handle; 
 TaskHandle_t task7Handle; 
+TaskHandle_t task8Handle; 
 
 // Prototipos de funciones
 void task1(void *pvParameters);
@@ -47,6 +58,7 @@ void task4(void *pvParameters);
 void task5(void *pvParameters);
 void task6(void *pvParameters); 
 void task7(void *pvParameters); 
+void task8(void *pvParameters); 
 
 //Mensajes a imprimir por terminal
 const char T1E1[] = "Tarea 1: Botón presionado";
@@ -105,6 +117,7 @@ void setup() {
   xTaskCreatePinnedToCore(task5, "Task 5", 2048, NULL, 1, &task5Handle, 0); //PWM LED
   xTaskCreatePinnedToCore(task6, "Task 6", 4096, NULL, 1, &task6Handle, 0); //MPU
   xTaskCreatePinnedToCore(task7, "Task 7", 1024, NULL, 1, &task7Handle, 0); //MPU
+  xTaskCreatePinnedToCore(task8, "Task 8", 2048, NULL, 1, &task8Handle, 0); //Calculo taylor
 }
 //----------------------------- Void loop --------------------------------- 
 void loop() {
@@ -239,7 +252,25 @@ void task4(void *pvParameters) {
             Serial.print(T5E0[i]);
             vTaskDelay(10 / portTICK_PERIOD_MS);
           }
-          Serial.print(smoothTime);        
+          Serial.print(smoothTime);
+        }else if (command.indexOf("Seno:") != -1) {
+          Serial.println();
+          // Introducir valor para calcular su seno
+          int posicion = command.indexOf(':'); // Obtiene la posición del ':'
+          String senoX = command.substring(posicion + 1); // Extrae todo lo que está después del ':'
+          anguloGrados = senoX.toFloat(); // Convierte la subcadena a flotante
+          calcular = true;
+          Serial.print("Calculando...");
+          while(calcular == true){
+            vTaskDelay(20 / portTICK_PERIOD_MS);
+          }
+          Serial.println();
+          for (int i = 0; i < msgSenoTaylor_leng; i++) {
+            Serial.print(msgSenoTaylor[i]);
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+          }
+          Serial.println();
+          Serial.printf("Ángulo: %.2f°\nSeno aproximado: %.8f\n", anguloGrados, senoResultado);          
         }else{
           // Cuando se introduce un comando no reconocido
           // Imprimir "Comando no reconocido. Ejemplo: ET01, ET02, ET03"
@@ -379,7 +410,7 @@ void task6(void *pvParameters) {
         }
         Serial.print("1 = ");
         Serial.print(cuenta1);
-        // Imprime el tiempo orientado en cara 1:
+        // Imprime el tiempo orientado en cara 2:
         Serial.println();
         for(int i = 0; i<TiempoTotal_leng; i++){
           Serial.print(TiempoTotal[i]);
@@ -387,13 +418,12 @@ void task6(void *pvParameters) {
         }
         Serial.print("2 = ");
         Serial.print(cuenta2);
-        // Imprime el tiempo orientado en cara 2:
+        // Imprime el tiempo orientado en cara 3:
         Serial.println();
         for(int i = 0; i<TiempoTotal_leng; i++){
           Serial.print(TiempoTotal[i]);
           vTaskDelay(10 / portTICK_PERIOD_MS);
         }
-        // Imprime el tiempo orientado en cara 3:
         Serial.print("3 = ");
         Serial.print(cuenta3);
         // Imprime el tiempo orientado en cara 4:
@@ -412,7 +442,7 @@ void task6(void *pvParameters) {
         }
         Serial.print("5 = ");
         Serial.print(cuenta5);
-        // Imprime el tiempo orientado en caea 6:
+        // Imprime el tiempo orientado en cara 6:
         Serial.println();
         for(int i = 0; i<TiempoTotal_leng; i++){
           Serial.print(TiempoTotal[i]);
@@ -459,4 +489,22 @@ void task7(void *pvParameters) {
     }
     vTaskDelay(50 / portTICK_PERIOD_MS);
   }
+}
+
+// Tarea 8: Polinomio de Taylor de grado 20 para seno
+void task8(void *pvParameters) {
+  while (1) {
+    if (calcular == true){
+      anguloRads = anguloGrados * (PI / 180.0); // Convertir a radianes
+      // Calcular el polinomio de Taylor de grado 20 para seno
+      senoResultado = 0;
+      for (int n = 0; n <= maxTerms; n++) {
+        float term = pow(-1, n) * pow(anguloRads, 2 * n + 1) / tgamma(2 * n + 2); // Término n de Taylor
+        senoResultado += term; // Suma término n de la serie al resultado
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+      }    
+      calcular = false;
+    }
+    vTaskDelay(50 / portTICK_PERIOD_MS); 
+  } 
 }
