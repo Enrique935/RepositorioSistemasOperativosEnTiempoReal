@@ -2,12 +2,12 @@
 #include <LiquidCrystal_I2C.h>
 #include <MPU6050.h>
 
-/*#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_FREERTOS_UNICORE
   static const BaseType_t app_cpu = 0;
 #else
   static const BaseType_t app_cpu = 1;
 #endif
-*/
+
 static SemaphoreHandle_t mutex;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); // Dirección I2C LCD
